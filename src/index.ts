@@ -82,6 +82,21 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   throw new Error("Invalid resource path");
 });
 
+const VIM_ALL_BUFFER: Tool = {
+  name: "vim_all_buffer",
+  description: "Retrieve all buffers of files opened in VIM",
+  inputSchema: {
+    type: "object",
+    properties: {
+      filename: {
+        type: "string",
+        description: "File name to edit (can be empty, assume buffer is already open)"
+      }
+    },
+    required: []
+  }
+};
+
 const VIM_BUFFER: Tool = {
   name: "vim_buffer",
   description: "Current VIM text editor buffer with line numbers shown",
@@ -239,6 +254,7 @@ const VIM_VISUAL: Tool = {
 };
 
 const NEOVIM_TOOLS = [
+  VIM_ALL_BUFFER,
   VIM_BUFFER,
   VIM_COMMAND,
   VIM_STATUS,
@@ -255,6 +271,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   switch (request.params.name) {
+    case "vim_all_buffer": {
+      return await handleAllBuffer();
+    }
     case "vim_buffer": {
       return await handleBuffer();
     }
@@ -348,6 +367,19 @@ async function handleCommand(command: string) {
     content: [{
       type: "text", 
       text: result
+    }]
+  };
+}
+
+async function handleAllBuffer() {
+  const bufferContents = await neovimManager.getAllBufferContents();
+
+  return {
+    content: [{
+      type: "text",
+      text: Array.from(bufferContents.entries())
+        .map(([lineNum, lineText]) => `${lineNum}: ${lineText}`)
+        .join('\n')
     }]
   };
 }

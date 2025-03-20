@@ -55,6 +55,41 @@ export class NeovimManager {
     }
   }
 
+  public async getAllBufferContents(): Promise<Array<string>> {
+    try {
+      const nvim = await this.connect();
+      // 全てのバッファを取得
+      const buffers = await nvim.buffers;
+      
+      // 表示されているバッファをフィルタリングして、それらのファイル名を取得
+      const filenames = await Promise.all(
+        buffers.map(async (buffer) => {
+          try {
+            // バッファ情報を取得
+            const bufnr = buffer.id;
+            const isListed = await nvim.call('buflisted', [bufnr]);
+            
+            // listedバッファのみ処理 (`:ls`と同様)
+            if (isListed) {
+              // バッファのファイル名を取得
+              const name = await buffer.name;
+              return name || '[No Name]';
+            }
+            return null; // 非表示バッファはnullを返す
+          } catch (err) {
+            return null;
+          }
+        })
+      );
+      
+      // nullを除外して結果を返す
+      return filenames.filter(name => name !== null) as Array<string>;
+    } catch (error) {
+      console.error('Error getting buffer contents:', error);
+      return new Array();
+    }
+  }
+
   public async getBufferContents(): Promise<Map<number, string>> {
     try {
       const nvim = await this.connect();
