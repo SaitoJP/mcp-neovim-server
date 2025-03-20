@@ -18,7 +18,7 @@ import { NeovimManager } from "./neovim.js";
 const server = new Server(
   {
     name: "mcp-neovim-server",
-    version: "0.3.1"
+    version: "0.3.2"
   },
   {
     capabilities: {
